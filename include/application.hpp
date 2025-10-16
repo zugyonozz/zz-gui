@@ -14,6 +14,7 @@ namespace zz {
 		static inline HINSTANCE g_hinstance_ = GetModuleHandleW(nullptr) ;
 		static inline std::string g_class_name_ = "zketch_app" ;
 		static inline bool g_class_name_was_registered_ = false ;
+		static inline std::queue<Event> g_events_ {} ;
 
 		static void RegisterWindow(HWND handle, Window* window) {
 			if (handle && window) {
@@ -116,5 +117,54 @@ namespace zz {
 		static bool IsRunning() noexcept {
 			return g_is_running_ ;
 		}
+
+		static void PushEvent(const Event& event) noexcept {
+			g_events_.push(event) ;
+		}
+
+		static bool PollEvent(Event& event) noexcept {
+			if (g_events_.empty()) {
+				return false ;
+			}
+
+			event = g_events_.front() ;
+			g_events_.pop() ;
+			return true ;
+		}
+
+		static bool PeekEvent(Event& event) noexcept {
+			if (g_events_.empty()) {
+				return false ;
+			}
+
+			event = g_events_.front() ;
+			return true ;			
+		}
+
+		static void ClearEvent() noexcept {
+			while (!g_events_.empty()) {
+				g_events_.pop() ;
+			}
+		}
 	} ;
+
+	inline bool PollEvent(Event& event) noexcept {
+		if (Application::PollEvent(event)) {
+			return true ;
+		}
+
+		MSG msg{} ;
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			event = Event::CreateEventFromMSG(msg) ;
+
+			if (event.GetType() != EventType::None) {
+				Application::PushEvent(event) ;
+			}
+
+			TranslateMessage(&msg) ;
+			DispatchMessage(&msg) ;
+		}
+
+		return Application::PollEvent(event) ;
+	}
 }

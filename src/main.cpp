@@ -12,7 +12,18 @@ int main() {
 		std::cerr << e.what() ;
 	}
 
+	Event e ;
 	while (Application::IsRunning()) {
-		
+		while (PollEvent(e)) {
+			if (e.GetType() == EventType::Window) {
+				auto e_ = e.GetWindowEventData() ;
+				if (e_->GetEvent() == WindowEvent::Close) {
+					window.Close() ;
+					Application::QuitProgram() ;
+					break ;
+				}
+			}
+		}
+		Sleep(16) ;
 	}
 }

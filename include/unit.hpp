@@ -5,7 +5,7 @@
 namespace zz {
 
 	template <Arithmetic type>
-	struct Point {
+	class Point {
 	public :
 		type x = {} ;
 		type y = {} ;
@@ -185,7 +185,7 @@ namespace zz {
 	Point(type) -> Point<type> ;
 
 	template <Arithmetic type>
-	struct Size {
+	class Size {
 	public :
 		MakeSizeType<type> w {} ;
 		MakeSizeType<type> h {} ;
@@ -365,7 +365,8 @@ namespace zz {
 	Size(type) -> Size<type> ;
 
 	template <Arithmetic type>
-	struct Rect : Point<type>, Size<type> {
+	class Rect : Point<type>, Size<type> {
+	public :
 		constexpr Rect() noexcept = default ;
 		constexpr Rect(const Rect&) noexcept = default ;
 		constexpr Rect(Rect&&) noexcept = default ;
