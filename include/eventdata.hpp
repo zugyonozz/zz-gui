@@ -25,12 +25,12 @@ namespace zz {
 	} ;
 
 	class MouseEventData {
-		friend Event ;
+		friend class Event ;
 
 	private :
 		MouseEvent type_ = MouseEvent::None ;
 		MouseButton button_ = MouseButton::None ;
-		std::variant<Point<uint16_t>, float> data_ {} ;
+		std::variant<Point<uint16_t>, uint16_t> data_ {} ;
 
 	public :
 		MouseEventData() noexcept = default ;
@@ -52,12 +52,12 @@ namespace zz {
 
 		MouseEvent GetEvent() const noexcept { return type_ ; }
 		MouseButton GetButton() const noexcept { return button_ ; }
-		float GetValue() const noexcept { return type_ == MouseEvent::Wheel ? std::get<float>(data_) : 0.0f ; }
+		float GetValue() const noexcept { return type_ == MouseEvent::Wheel ? std::get<uint16_t>(data_) : 0.0f ; }
 		Point<uint16_t> GetPosition() const noexcept { return type_ != MouseEvent::Wheel ? std::get<Point<uint16_t>>(data_) : Point<uint16_t>{0, 0} ; }
 	} ;
 
 	class KeyEventData {
-		friend Event ;
+		friend class Event ;
 
 	private :
 		KeyEvent type_ = KeyEvent::None ;
