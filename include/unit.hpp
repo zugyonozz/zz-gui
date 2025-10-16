@@ -241,7 +241,7 @@ namespace zz {
 	template <Arithmetic type1, Arithmetic type2>
 	constexpr auto operator+(const Size<type1>& a, const Size<type2>& b) noexcept {
 		using type = std::common_type_t<type1, type2> ;
-		return Size<type> {Add{}(a.w, b.w), Add{}(a.w, b.w)} ;
+		return Size<type> {Add{}(a.w, b.w), Add{}(a.h, b.h)} ;
 	}
 
 	template <Arithmetic type1, Arithmetic type2>

@@ -170,7 +170,7 @@ namespace zz {
 		}
 
 		bool IsWindowValid() const noexcept { 
-			return handle_ && utility::CheckFlag(state_, WindowState::Destroyed) ; 
+			return handle_ && !utility::CheckFlag(state_, WindowState::Destroyed); 
 		}
 	} ;
 

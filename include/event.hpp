@@ -4,7 +4,10 @@
 
 namespace zz {
 
+	inline Event CreateEventFromMSG(const MSG&) noexcept ;
+
 	class Event {
+		friend inline Event CreateEventFromMSG(const MSG&) noexcept ;
 		using EventData = std::variant<WindowEventData, MouseEventData, KeyEventData> ;
 
 	private :
@@ -23,8 +26,29 @@ namespace zz {
 		Event& operator=(const Event&) noexcept = default ;
 		Event& operator=(Event&&) noexcept = default ;
 
-		static Event CreateEventFromMSG(const MSG& msg) noexcept {
-			switch (msg.message) {
+		EventType GetType() const noexcept { return type_ ; }
+		HWND GetHandle() const noexcept { return handle_ ; }
+
+		template<typename T>
+		const T* GetData() const noexcept {
+			return std::get_if<T>(&data_) ;
+		}
+
+		const WindowEventData* GetWindowEventData() const noexcept {
+			return std::get_if<WindowEventData>(&data_) ;
+		}
+
+		const MouseEventData* GetMouseEventData() const noexcept {
+			return std::get_if<MouseEventData>(&data_) ;
+		}
+
+		const KeyEventData* GetKeyEventData() const noexcept {
+			return std::get_if<KeyEventData>(&data_) ;
+		}
+	} ;
+
+	inline Event CreateEventFromMSG(const MSG& msg) noexcept {
+		switch (msg.message) {
 			case WM_SIZE :
 				return Event{msg.hwnd, WindowEventData{WindowEvent::Resize, Size<uint16_t>{LOWORD(msg.lParam), HIWORD(msg.lParam)}}} ;
 			case WM_CLOSE :
@@ -61,26 +85,5 @@ namespace zz {
 
 			return Event{} ;
 		}
-
-		EventType GetType() const noexcept { return type_ ; }
-		HWND GetHandle() const noexcept { return handle_ ; }
-
-		template<typename T>
-		const T* GetData() const noexcept {
-			return std::get_if<T>(&data_) ;
-		}
-
-		const WindowEventData* GetWindowEventData() const noexcept {
-			return std::get_if<WindowEventData>(&data_) ;
-		}
-
-		const MouseEventData* GetMouseEventData() const noexcept {
-			return std::get_if<MouseEventData>(&data_) ;
-		}
-
-		const KeyEventData* GetKeyEventData() const noexcept {
-			return std::get_if<KeyEventData>(&data_) ;
-		}
-	} ;
 
 }

@@ -4,6 +4,8 @@
 
 namespace zz {
 
+	class Event ;
+	
 	class WindowEventData {
 		friend class Event ;
 

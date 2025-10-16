@@ -3,8 +3,9 @@ project(zz-gui)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # <-- Tambahkan ini
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Executable
 add_executable(zz-gui
     src/main.cpp
 )
