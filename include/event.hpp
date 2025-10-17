@@ -1,62 +1,15 @@
 #pragma once
 
-#include "eventdata.hpp"
+#include "unit.hpp"
 
 namespace zz {
 
-	inline bool PollEvent(Event& e) noexcept ;
-
 	class Event {
-		friend inline bool PollEvent(Event& e) noexcept ;
-		using EventData = std::variant<WindowEventData, MouseEventData, KeyEventData> ;
-
-	private :
+	protected :
 		EventType type_ = EventType::None ;
 		HWND handle_ = nullptr ;
-		EventData data_ {} ;
 
-		Event(HWND handle, const WindowEventData& data) noexcept : type_(EventType::Window), handle_(handle), data_(data) {}
-		Event(HWND handle, const MouseEventData& data) noexcept : type_(EventType::Mouse), handle_(handle), data_(data) {}
-		Event(HWND handle, const KeyEventData& data) noexcept : type_(EventType::Key), handle_(handle), data_(data) {}
-
-		static Event CreateEventFromMSG(const MSG& msg) noexcept {
-		switch (msg.message) {
-			case WM_SIZE :
-				return Event{msg.hwnd, WindowEventData{WindowEvent::Resize, Size{LOWORD(msg.lParam), HIWORD(msg.lParam)}}} ;
-			case WM_CLOSE :
-				return Event{msg.hwnd, WindowEventData{WindowEvent::Close, Size{LOWORD(msg.lParam), HIWORD(msg.lParam)}}} ;
-			case WM_LBUTTONDOWN :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Down, MouseButton::Left, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_RBUTTONDOWN :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Down, MouseButton::Right, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_MBUTTONDOWN :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Down, MouseButton::Middle, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_LBUTTONUP :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Up, MouseButton::Left, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_RBUTTONUP :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Up, MouseButton::Right, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_MBUTTONUP :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Up, MouseButton::Middle, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_MOUSEHWHEEL :
-				return Event{msg.hwnd, MouseEventData{static_cast<float>(GET_WHEEL_DELTA_WPARAM(msg.wParam))}} ;
-			case WM_MOUSEMOVE : 
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Move, MouseButton::None, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_LBUTTONDBLCLK : 
-				return Event{msg.hwnd, MouseEventData{MouseEvent::DoubleClick, MouseButton::Left, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_RBUTTONDBLCLK : 
-				return Event{msg.hwnd, MouseEventData{MouseEvent::DoubleClick, MouseButton::Right, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_MBUTTONDBLCLK : 
-				return Event{msg.hwnd, MouseEventData{MouseEvent::DoubleClick, MouseButton::Middle, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_MOUSEHOVER :
-				return Event{msg.hwnd, MouseEventData{MouseEvent::Hover, MouseButton::None, Point{GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam)}}} ;
-			case WM_KEYDOWN :
-				return Event{msg.hwnd, KeyEventData{KeyEvent::Down, static_cast<KeyCode>(msg.wParam)}} ;
-			case WM_KEYUP :
-				return Event{msg.hwnd, KeyEventData{KeyEvent::Up, static_cast<KeyCode>(msg.wParam)}} ;
-			}
-
-			return Event{} ;
-		}
+		Event(HWND handle, EventType type) noexcept : handle_(handle), type_(type) {}
 
 	public :
 		Event() noexcept = default ;
@@ -64,29 +17,99 @@ namespace zz {
 		Event(Event&&) noexcept = default ;
 		Event& operator=(const Event&) noexcept = default ;
 		Event& operator=(Event&&) noexcept = default ;
+		virtual ~Event() noexcept = default ;
 
 		EventType GetType() const noexcept { return type_ ; }
 		HWND GetHandle() const noexcept { return handle_ ; }
-
-		template<typename T>
-		const T* GetData() const noexcept {
-			return std::get_if<T>(&data_) ;
-		}
-
-		const WindowEventData* GetWindowEventData() const noexcept {
-			return std::get_if<WindowEventData>(&data_) ;
-		}
-
-		const MouseEventData* GetMouseEventData() const noexcept {
-			return std::get_if<MouseEventData>(&data_) ;
-		}
-
-		const KeyEventData* GetKeyEventData() const noexcept {
-			return std::get_if<KeyEventData>(&data_) ;
-		}
+		const Window* GetContext() const noexcept ;
 
 		bool IsWindowEvent() const noexcept { return type_ == EventType::Window ; }
 		bool IsKeyEvent() const noexcept { return type_ == EventType::Key ; }
 		bool IsMouseEvent() const noexcept { return type_ == EventType::Mouse ; }
 	} ;
+
+	class WindowEvent : public Event, public Size<uint16_t> {
+	private :
+		WindowState state_ = WindowState::None ;
+
+		template <Arithmetic type>
+		WindowEvent(HWND handle, WindowState state, const Size<type> size) noexcept : Size(size), state_(state), Event(handle, EventType::Window) {}
+
+	public :
+		WindowEvent() noexcept = default ;
+		WindowEvent(const WindowEvent&) noexcept = default ;
+		WindowEvent& operator=(const WindowEvent&) noexcept = default ;
+		WindowEvent(WindowEvent&&) noexcept = default ;
+		WindowEvent& operator=(WindowEvent&&) noexcept = default ;
+
+		WindowState GetState() const noexcept { return state_ ; }
+		Size<uint16_t> GetValue() const noexcept { return this->GetSize() ; }
+	} ;
+
+	class MouseEvent : public Event, public  Size<uint16_t> {
+	protected :
+		MouseState type_ = MouseState::None ;
+		MouseButton button_ = MouseButton::None ;
+
+	public :
+		virtual ~MouseEvent() noexcept = default ;
+	} ;
+
+	class MouseDelta : public MouseEvent {
+	private :
+		float value_ = 0.0f ;
+
+		template <Arithmetic type>
+		MouseDelta(type value) noexcept : value_(value) {}
+
+	public :
+		MouseDelta() noexcept = default ;
+		MouseDelta(const MouseDelta&) noexcept = default ;
+		MouseDelta& operator=(const MouseDelta&) noexcept = default ;
+		MouseDelta(MouseDelta&&) noexcept = default ;
+		MouseDelta& operator=(MouseDelta&&) noexcept = default ;
+
+		float GetValue() const noexcept { return value_ ; }
+	} ;
+
+	class MousePos : public MouseEvent, public Point<float> {
+	private :
+		template <Arithmetic type>
+		MousePos(const Point<type>& value) noexcept : Point(value) {}
+
+	public :
+		MousePos() noexcept = default ;
+		MousePos(const MousePos&) noexcept = default ;
+		MousePos& operator=(const MousePos&) noexcept = default ;
+		MousePos(MousePos&&) noexcept = default ;
+		MousePos& operator=(MousePos&&) noexcept = default ;
+		
+		Point<float> GetValue() const noexcept { return this->GetPoint() ; }
+	} ;
+
+	class KeyEvent {
+	private :
+		KeyState type_ = KeyState::None ;
+		KeyCode value_ = KeyCode::None ;
+
+		KeyEvent(KeyState type, KeyCode value) noexcept : type_(type), value_(value) {}
+	
+	public :
+		KeyEvent() noexcept = default ;
+		KeyEvent(const KeyEvent&) noexcept = default ;
+		KeyEvent& operator=(const KeyEvent&) noexcept = default ;
+		KeyEvent(KeyEvent&&) noexcept = default ;
+		KeyEvent& operator=(KeyEvent&&) noexcept = default ;
+
+		KeyState GetEvent() const noexcept { return type_ ; }
+		KeyCode GetValue() const noexcept { return value_ ; }
+	} ;
+
+	template <typename> struct is_event_type : std::false_type {} ;
+	template <> struct is_event_type<WindowEvent> : std::true_type {} ;
+	template <> struct is_event_type<MouseEvent> : std::true_type {} ;
+	template <> struct is_event_type<KeyEvent> : std::true_type {} ;
+	
+	template <typename T>
+	concept EventType_t = is_event_type<T>::value ;
 }

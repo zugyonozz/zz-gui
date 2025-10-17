@@ -49,7 +49,7 @@ namespace zz {
 		Max              = 11  // SW_MAX
 	};
 
-	enum class WindowState : uint8_t {
+	enum class WindowFlag : uint8_t {
 		None			= 0,
 		Registered		= 1 << 0,
 		Closed			= 1 << 1,
@@ -65,7 +65,7 @@ namespace zz {
 		Widget,
 	} ;
 
-	enum class WindowEvent : uint8_t {
+	enum class WindowState : uint8_t {
 		None,
 		Close,
 		Minimize,
@@ -73,7 +73,7 @@ namespace zz {
 		Resize
 	} ;
 
-	enum class MouseEvent : uint8_t {
+	enum class MouseState : uint8_t {
 		None,
 		Move,
 		Up,
@@ -92,7 +92,7 @@ namespace zz {
 		Undefined
 	} ;
 
-	enum class KeyEvent : uint8_t {
+	enum class KeyState : uint8_t {
 		None,
 		Up,
 		Down

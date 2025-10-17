@@ -3,15 +3,15 @@
 #include "application.hpp"
 
 namespace utility {
-	bool CheckFlag(zz::WindowState src, zz::WindowState flag) noexcept {
+	bool CheckFlag(zz::WindowFlag src, zz::WindowFlag flag) noexcept {
 		return static_cast<bool>(src & flag) ;
 	}
 
-	void ActivateFlag(zz::WindowState& src, zz::WindowState flag) noexcept {
+	void ActivateFlag(zz::WindowFlag& src, zz::WindowFlag flag) noexcept {
 		src |= flag ;
 	} ;
 
-	void DeactivateFlag(zz::WindowState& src, zz::WindowState flag) noexcept {
+	void DeactivateFlag(zz::WindowFlag& src, zz::WindowFlag flag) noexcept {
 		src &= ~flag ;
 	}
 }
@@ -21,7 +21,7 @@ namespace zz {
 	class Window : public Application {
 	private :
 		HWND handle_ {} ;
-		WindowState state_ = WindowState::None ;
+		WindowFlag state_ = WindowFlag::None ;
 
 		template <Arithmetic type1, Arithmetic type2>
 		void create_window(const char* title, const Point<type2>& pos, const Size<type1>& size, WindowStyle style) {
@@ -43,7 +43,7 @@ namespace zz {
 			if (!handle_) {
 				throw Ex::window("create_window", "Failed to create window!") ;
 			} else {
-				utility::ActivateFlag(state_, WindowState::Registered) ;
+				utility::ActivateFlag(state_, WindowFlag::Registered) ;
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace zz {
 		template <Arithmetic type>
 		Window(Window&& o) noexcept {
 			handle_ = std::exchange(o.handle_, nullptr) ;
-			state_ = std::exchange(o.state_, WindowState::None) ;
+			state_ = std::exchange(o.state_, WindowFlag::None) ;
 			if (handle_) {
 				UnregisterWindow(handle_) ;
 				RegisterWindow(handle_, this) ;
@@ -120,7 +120,7 @@ namespace zz {
 		Window& operator=(Window&& o) noexcept {
 			if (this != &o) {
 				handle_ = std::exchange(o.handle_, nullptr) ;
-				state_ = std::exchange(o.state_, WindowState::None) ;
+				state_ = std::exchange(o.state_, WindowFlag::None) ;
 				if (handle_) {
 					UnregisterWindow(handle_) ;
 					RegisterWindow(handle_, this) ;
@@ -140,14 +140,14 @@ namespace zz {
 		}
 
 		void Close() noexcept {
-			if (utility::CheckFlag(state_, WindowState::Registered)) {
+			if (utility::CheckFlag(state_, WindowFlag::Registered)) {
 				UnregisterWindow(handle_) ;
-				utility::DeactivateFlag(state_, WindowState::Registered) ;
+				utility::DeactivateFlag(state_, WindowFlag::Registered) ;
 				DestroyWindow(handle_) ;
 				// sepertinya cukup bikin registered saja tidak perlu close, karena di dalam proses pembuatan window itu sendiri udah satu alur proses dengan register window
 				// ntah lah aku pikir nanti
-				utility::ActivateFlag(state_, WindowState::Closed) ; 
-				utility::ActivateFlag(state_, WindowState::Destroyed) ; 
+				utility::ActivateFlag(state_, WindowFlag::Closed) ; 
+				utility::ActivateFlag(state_, WindowFlag::Destroyed) ; 
 			}
 		}
 
@@ -170,16 +170,17 @@ namespace zz {
 		}
 
 		bool IsWindowValid() const noexcept { 
-			return handle_ && !utility::CheckFlag(state_, WindowState::Destroyed); 
+			return handle_ && !utility::CheckFlag(state_, WindowFlag::Destroyed); 
 		}
 	} ;
 
 	inline LRESULT CALLBACK WindowProcedure(HWND handle, uint32_t message, uint64_t wparam, int64_t lparam) noexcept {
 		switch (message) {
-			case WM_SIZE : 
-				break ;
-
+			case WM_SIZE :
+				Application::PushEvent(Event{handle, WindowEventData{WindowEvent::Resize, Size{LOWORD(lparam), HIWORD(lparam)}}}) ;
+				break ; 
 			case WM_CLOSE :
+				Application::PushEvent(Event{handle, WindowEventData{WindowEvent::Close, Size{LOWORD(lparam), HIWORD(lparam)}}}) ;
 				return 0 ;
 
 			case WM_DESTROY :
@@ -192,5 +193,4 @@ namespace zz {
 
 		return DefWindowProc(handle, message, wparam, lparam) ;
 	}
-
 }
